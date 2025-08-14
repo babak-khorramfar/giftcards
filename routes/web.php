@@ -30,3 +30,5 @@ Route::middleware('auth')->group(function () {
 
 // پنل مدیریت (فعلاً placeholder؛ بعداً گارد دسترسی می‌گذاریم)
 Route::get('/admin', fn () => 'Admin Panel')->name('admin.dashboard');
+Route::post('/orders', [\App\Http\Controllers\OrderController::class, 'store'])->name('orders.store');
+Route::get('/orders/{id}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
