@@ -36,4 +36,17 @@ class OrderController extends Controller
             'order' => $order
         ]);
     }
+
+    public function index()
+    {
+        $orders = \App\Models\Order::where('user_id', auth()->id())
+            ->latest()
+            ->paginate(10);
+
+        return view('orders.index', [
+            'title'  => 'سفارش‌های من',
+            'orders' => $orders,
+        ]);
+    }
+
 }
