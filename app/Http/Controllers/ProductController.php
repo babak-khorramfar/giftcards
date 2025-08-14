@@ -17,4 +17,14 @@ class ProductController extends Controller
             'products' => $products
         ]);
     }
+
+    public function show(string $slug)
+{
+    $product = GiftCard::where('slug', $slug)->firstOrFail();
+
+    return view('products.show', [
+        'title' => $product->name,
+        'product' => $product
+    ]);
+}
 }

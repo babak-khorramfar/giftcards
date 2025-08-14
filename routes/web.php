@@ -18,7 +18,7 @@ Route::get('/health', function () {
 Route::get('/', [\App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::get('/products', [\App\Http\Controllers\ProductController::class, 'index'])->name('products.index');
-Route::get('/products/{slug}', fn (string $slug) => "Product Detail: {$slug}")
+Route::get('/products/{slug}', [\App\Http\Controllers\ProductController::class, 'show'])
     ->whereAlphaNumeric('slug')
     ->name('products.show');
 
