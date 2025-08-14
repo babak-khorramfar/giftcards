@@ -15,7 +15,7 @@ Route::get('/health', function () {
 });
 
 // صفحات اصلی سایت (اسکلت اولیه با خروجی متنی؛ بعداً به کنترلر/ویو وصل می‌کنیم)
-Route::get('/', fn () => 'Home Page')->name('home');
+Route::get('/', [\App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::get('/products', fn () => 'Products List')->name('products.index');
 Route::get('/products/{slug}', fn (string $slug) => "Product Detail: {$slug}")
