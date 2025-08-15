@@ -1,4 +1,4 @@
-@extends('layouts.app')
+<x-app-layout>
 
 @section('content')
 <div class="container">
@@ -13,3 +13,4 @@
     <a href="{{ route('products.index') }}">بازگشت به لیست محصولات</a>
 </div>
 @endsection
+</x-app-layout>

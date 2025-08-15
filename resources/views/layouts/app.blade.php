@@ -32,5 +32,20 @@
                 {{ $slot }}
             </main>
         </div>
+        <div style="padding:10px; background:#f5f5f5;">
+            @auth
+                <span>سلام، {{ auth()->user()->name }}</span> |
+                <a href="{{ route('orders.index') }}">سفارش‌های من</a> |
+                <a href="{{ route('dashboard') }}">داشبورد</a> |
+                <form action="{{ route('logout') }}" method="POST" style="display:inline;">
+                    @csrf
+                    <button type="submit">خروج</button>
+                </form>
+            @else
+                <a href="{{ route('login') }}">ورود</a> |
+                <a href="{{ route('register') }}">ثبت‌نام</a>
+            @endauth
+        </div>
+
     </body>
 </html>
