@@ -1,14 +1,23 @@
 <x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl">سفارش #{{ $order->id }}</h2>
+    </x-slot>
 
-@section('content')
-<div class="container">
-    <h1>{{ $title }}</h1>
+    <div class="py-6">
+        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8 space-y-4">
+            <div>مبلغ: {{ $order->total }} {{ $order->currency }}</div>
+            <div>وضعیت: {{ $order->status }}</div>
 
-    <p>شماره سفارش: {{ $order->id }}</p>
-    <p>مبلغ کل: {{ $order->total }} {{ $order->currency }}</p>
-    <p>وضعیت: {{ $order->status }}</p>
+            @if($order->meta)
+                <div>
+                    <strong>Meta:</strong>
+                    <pre>{{ json_encode($order->meta, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre>
+                </div>
+            @endif
 
-    <a href="{{ route('home') }}">بازگشت به صفحه اصلی</a>
-</div>
-@endsection
+            @if($order->error_message)
+                <div style="color:red;">خطا: {{ $order->error_message }}</div>
+            @endif
+        </div>
+    </div>
 </x-app-layout>

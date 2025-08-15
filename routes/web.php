@@ -1,10 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -12,32 +12,18 @@ use App\Http\Controllers\OrderController;
 |--------------------------------------------------------------------------
 */
 
-// --- Breeze default routes ---
+// --- Breeze default / Home ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-    // تاریخچه سفارش‌ها (لیست)
-    Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
-
-    // جزئیات سفارش
-    Route::get('/orders/{id}', [\App\Http\Controllers\OrderController::class, 'show'])->name('orders.show');
-});
-
-// ثبت سفارش (می‌ماند روی POST /orders)
-Route::post('/orders', [\App\Http\Controllers\OrderController::class, 'store'])->name('orders.store');
-
-    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
-
-});
-
+// احراز هویت Breeze
 require __DIR__.'/auth.php';
 
-// --- Custom app routes (restored) ---
+// --- ناحیه عمومی (نیاز به لاگین ندارد) ---
+// محصولات
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+Route::get('/products/{slug}', [ProductController::class, 'show'])
+    ->whereAlphaNumeric('slug')
+    ->name('products.show');
 
 // Health check
 Route::get('/health', fn () => response()->json([
@@ -45,23 +31,44 @@ Route::get('/health', fn () => response()->json([
     'time'   => now()->toIso8601String(),
 ]));
 
-// Products
-Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-Route::get('/products/{slug}', [ProductController::class, 'show'])
-    ->whereAlphaNumeric('slug')
-    ->name('products.show');
-
-// Checkout
-Route::get('/checkout', fn () => 'Checkout / Payment')->name('checkout.index');
-
-// Orders
-Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
-Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
-
-// Admin (placeholder)
+// صفحه نمونه ادمین (بعداً جایگزین شود)
 Route::get('/admin', fn () => 'Admin Panel')->name('admin.dashboard');
 
-Route::middleware('auth')->group(function () {
-    // ...
-    Route::get('/my-orders', [OrderController::class, 'index'])->name('orders.index');
+// --- ناحیه محافظت‌شده (لاگین + ایمیل وریفای) ---
+Route::middleware(['auth', 'verified'])->group(function () {
+
+    // داشبورد
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+
+    // پروفایل
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // سفارش‌ها (RESTful حداقلی)
+    // لیست سفارش‌ها
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+
+    // ثبت سفارش
+    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+
+    // جزئیات سفارش
+    Route::get('/orders/{id}', [OrderController::class, 'show'])
+        ->whereNumber('id')
+        ->name('orders.show');
+});
+
+// فقط برای تست — بعداً حذف کن
+Route::post('/mock/purchase', function (\Illuminate\Http\Request $request) {
+    // برای simulate موفقیت:
+    return response()->json([
+        'data' => [
+            'id'         => 'prov_'.uniqid(),
+            'status'     => 'success', // یا 'canceled' برای تست لغو
+            'card_code'  => 'ABCD-EFGH-IJKL',
+            'echo_order' => $request->input('our_order_id'),
+        ],
+    ]);
 });
