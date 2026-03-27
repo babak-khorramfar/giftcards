@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'gift_provider' => [
+        'purchase_url'   => env('GIFT_PROVIDER_PURCHASE_URL', 'https://example.com/api/purchase'),
+        'api_key'        => env('GIFT_PROVIDER_API_KEY', 'test_key'),
+        'webhook_secret' => env('GIFT_PROVIDER_WEBHOOK_SECRET', 'test_secret'),
+        'name'           => env('GIFT_PROVIDER_NAME', 'mock'),
+    ],
 ];

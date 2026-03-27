@@ -1,0 +1,208 @@
+//// GiftCards ERD (v0.1) — base schema for modular reuse
+//// Tooling: https://dbdiagram.io (DBML) | این فایل برای ورژن‌گذاری و بازبینی مرحله‌ای است.
+
+Table users {
+  id bigint [pk, increment]
+  name varchar(191)
+  email varchar(191) [unique]
+  email_verified_at timestamp [null]
+  password varchar(191)
+  remember_token varchar(100) [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table categories {
+  id bigint [pk, increment]
+  name varchar(191)
+  slug varchar(191) [unique]
+  parent_id bigint [ref: > categories.id, null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table providers {
+  id bigint [pk, increment]
+  name varchar(191)
+  code varchar(100) [unique] // short code, e.g., MOBGFT
+  api_base_url varchar(255) [null]
+  is_active boolean [default: true]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table products {
+  id bigint [pk, increment]
+  name varchar(191)
+  slug varchar(191) [unique]
+  description text [null]
+  thumbnail_url varchar(255) [null]
+  is_active boolean [default: true]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table product_categories {
+  product_id bigint [ref: > products.id]
+  category_id bigint [ref: > categories.id]
+  Note: 'pk(product_id, category_id)'
+}
+
+Table giftcard_skus {
+  id bigint [pk, increment]
+  product_id bigint [ref: > products.id]
+  provider_id bigint [ref: > providers.id, null] // optional direct mapping
+  face_value decimal(12,2)
+  currency_code char(3) // ISO 4217
+  region varchar(50) [null] // e.g., US, EU, Global
+  delivery_type varchar(20) // code, email, etc.
+  is_active boolean [default: true]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+  Indexes {
+    (product_id, currency_code)
+  }
+}
+
+Table currencies {
+  code char(3) [pk] // e.g., USD, EUR, IRR
+  name varchar(50)
+  symbol varchar(10) [null]
+  precision tinyint [default: 2]
+  is_default boolean [default: false]
+}
+
+Table sku_prices {
+  id bigint [pk, increment]
+  sku_id bigint [ref: > giftcard_skus.id]
+  currency_code char(3) [ref: > currencies.code]
+  amount decimal(12,2)
+  type varchar(20) // base | final | promo
+  created_at timestamp [null]
+  updated_at timestamp [null]
+  Indexes {
+    (sku_id, currency_code, type) [unique]
+  }
+}
+
+Table fx_rates {
+  base_code char(3) [ref: > currencies.code]
+  quote_code char(3) [ref: > currencies.code]
+  rate decimal(18,8)
+  captured_at timestamp
+  Note: 'pk(base_code, quote_code, captured_at)'
+}
+
+Table inventories {
+  id bigint [pk, increment]
+  sku_id bigint [ref: > giftcard_skus.id]
+  total int
+  reserved int [default: 0]
+  updated_at timestamp [null]
+  Indexes {
+    (sku_id) [unique]
+  }
+}
+
+Table carts {
+  id bigint [pk, increment]
+  user_id bigint [ref: > users.id, null]
+  session_id varchar(100) [null]
+  status varchar(20) // open | checked_out | expired
+  currency_code char(3) [ref: > currencies.code]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table cart_items {
+  id bigint [pk, increment]
+  cart_id bigint [ref: > carts.id]
+  sku_id bigint [ref: > giftcard_skus.id]
+  qty int
+  unit_price decimal(12,2)
+  currency_code char(3) [ref: > currencies.code]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+  Indexes {
+    (cart_id, sku_id) [unique]
+  }
+}
+
+Table orders {
+  id bigint [pk, increment]
+  user_id bigint [ref: > users.id, null]
+  status varchar(30) // pending | paid | failed | fulfilled | canceled
+  currency_code char(3) [ref: > currencies.code]
+  subtotal decimal(12,2)
+  discount_total decimal(12,2) [default: 0.00]
+  tax_total decimal(12,2) [default: 0.00]
+  total decimal(12,2)
+  placed_at timestamp [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+  Indexes {
+    (user_id, status)
+  }
+}
+
+Table order_items {
+  id bigint [pk, increment]
+  order_id bigint [ref: > orders.id]
+  sku_id bigint [ref: > giftcard_skus.id]
+  qty int
+  unit_price decimal(12,2)
+  currency_code char(3) [ref: > currencies.code]
+  provider_order_ref varchar(191) [null]
+  redeem_code varchar(191) [null] // اگر آنی تحویل شود
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table payments {
+  id bigint [pk, increment]
+  order_id bigint [ref: > orders.id]
+  method varchar(50) // gateway code
+  amount decimal(12,2)
+  currency_code char(3) [ref: > currencies.code]
+  status varchar(30) // initiated | succeeded | failed | refunded | partial_refund
+  reference varchar(191) [null]
+  payload json [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table coupons {
+  id bigint [pk, increment]
+  code varchar(50) [unique]
+  discount_type varchar(10) // percent | fixed
+  discount_value decimal(12,2)
+  starts_at timestamp [null]
+  ends_at timestamp [null]
+  usage_limit int [null]
+  used_count int [default: 0]
+  is_active boolean [default: true]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table coupon_redemptions {
+  id bigint [pk, increment]
+  coupon_id bigint [ref: > coupons.id]
+  order_id bigint [ref: > orders.id]
+  user_id bigint [ref: > users.id, null]
+  amount_applied decimal(12,2)
+  created_at timestamp [null]
+}
+
+Table provider_webhooks {
+  id bigint [pk, increment]
+  provider_id bigint [ref: > providers.id]
+  event varchar(100)
+  status varchar(30) // received | processed | failed
+  payload json
+  received_at timestamp
+  processed_at timestamp [null]
+}
+
+Ref: product_categories.product_id > products.id
+Ref: product_categories.category_id > categories.id
